@@ -46,7 +46,7 @@ The conversion process is handled in a few simple steps:
 2.  **Install dependencies and browser files:**
     ```bash
     pip install -r requirements.txt
-    playwright install chromium
+    playwright install
     ```
 
 3.  **Run the application:**
