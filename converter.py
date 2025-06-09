@@ -37,12 +37,12 @@ import io
 from playwright.async_api import async_playwright
 
 # ####################################################################
-# YOUR APPLICATION CLASS - UNCHANGED
+# YOUR APPLICATION CLASS - MODIFIED
 # ####################################################################
 class PlaywrightMathConverter:
     def __init__(self, root):
         self.root = root
-        self.root.title("Math Markdown to PNG Converter")
+        self.root.title("markdown2png")
         self.root.geometry("1200x800")
         self.setup_ui()
 
@@ -54,7 +54,7 @@ class PlaywrightMathConverter:
         main_frame.columnconfigure(0, weight=1)
         main_frame.columnconfigure(1, weight=1)
         main_frame.rowconfigure(2, weight=1)
-        title_label = ttk.Label(main_frame, text="Math Markdown to PNG", font=('Arial', 16, 'bold'))
+        title_label = ttk.Label(main_frame, text="Paste your markdown below (or use clipboard buttons):", font=('Arial', 16))
         title_label.grid(row=0, column=0, columnspan=3, pady=(0, 10), sticky=tk.W)
         self.input_text = scrolledtext.ScrolledText(main_frame, width=60, height=25, wrap=tk.WORD, font=('Courier', 11))
         self.input_text.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 10))
@@ -72,13 +72,20 @@ class PlaywrightMathConverter:
         ttk.Label(control_frame, text="Theme:").grid(row=6, column=0, sticky=tk.W, pady=(5,0))
         self.theme = tk.StringVar(value="Academic")
         ttk.Combobox(control_frame, textvariable=self.theme, values=["Academic", "GitHub", "Clean"], state="readonly", width=13).grid(row=7, column=0, pady=(0, 15))
+        
         ttk.Button(control_frame, text="Copy to Clipboard", command=self.copy_to_clipboard).grid(row=8, column=0, pady=2, sticky='ew')
         ttk.Button(control_frame, text="Save as PNG", command=self.save_png).grid(row=9, column=0, pady=2, sticky='ew')
         ttk.Button(control_frame, text="Preview HTML", command=self.preview_html).grid(row=10, column=0, pady=2, sticky='ew')
         ttk.Button(control_frame, text="Clear", command=self.clear_input).grid(row=11, column=0, pady=(10, 0), sticky='ew')
+        
+        # --- NEW WIDGET ---
+        ttk.Separator(control_frame, orient='horizontal').grid(row=12, column=0, sticky='ew', pady=10)
+        ttk.Button(control_frame, text="Clipboard → Clipboard", command=self.process_clipboard_to_clipboard).grid(row=13, column=0, pady=2, sticky='ew')
+        # --- END NEW WIDGET ---
+        
         self.status_var = tk.StringVar(value="Ready")
         ttk.Label(main_frame, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W).grid(row=3, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(10, 0))
-        self.input_text.insert('1.0', "Paste your full markdown text here...")
+        self.input_text.insert('1.0', "")
 
     def get_css_styles(self):
         base_font_size, width, theme = self.font_size.get(), self.width.get(), self.theme.get()
@@ -118,11 +125,29 @@ class PlaywrightMathConverter:
         """
         return html
 
+    # --- NEW HELPER METHOD ---
+    def _populate_from_clipboard_if_empty(self):
+        """Checks if the input text is empty. If so, tries to fill it from the clipboard."""
+        if not self.input_text.get('1.0', tk.END).strip():
+            try:
+                clipboard_content = self.root.clipboard_get()
+                if clipboard_content:
+                    self.input_text.insert('1.0', clipboard_content)
+                    self.status_var.set("Pasted content from clipboard.")
+            except tk.TclError:
+                # This error occurs if the clipboard is empty or contains non-text data
+                pass
+
+    # --- MODIFIED METHOD ---
     def _start_threaded_conversion(self, on_success):
+        self._populate_from_clipboard_if_empty()
+        
         text = self.input_text.get('1.0', tk.END).strip()
         if not text:
-            messagebox.showwarning("Input Missing", "Please enter some text.")
+            messagebox.showwarning("Input Missing", "Please enter some text or copy it to your clipboard.")
+            self.status_var.set("Ready")
             return
+            
         self.status_var.set("Generating HTML...")
         html_content = self.markdown_to_html(text)
         def run_in_thread():
@@ -177,8 +202,16 @@ class PlaywrightMathConverter:
             else: self.status_var.set("Save cancelled.")
         self._start_threaded_conversion(on_success=_perform_save)
     
+    # --- MODIFIED METHOD ---
     def preview_html(self):
-        html_content = self.markdown_to_html(self.input_text.get('1.0', tk.END))
+        self._populate_from_clipboard_if_empty()
+        text = self.input_text.get('1.0', tk.END).strip()
+        if not text:
+            messagebox.showwarning("Input Missing", "Please enter some text or copy it to your clipboard.")
+            self.status_var.set("Ready")
+            return
+            
+        html_content = self.markdown_to_html(text)
         with tempfile.NamedTemporaryFile('w', delete=False, suffix=".html", encoding='utf-8') as f:
             temp_path = f.name
             f.write(html_content)
@@ -191,6 +224,13 @@ class PlaywrightMathConverter:
     def clear_input(self):
         self.input_text.delete('1.0', tk.END)
         self.status_var.set("Ready")
+
+    # --- NEW METHOD ---
+    def process_clipboard_to_clipboard(self):
+        """Clears the text area, then triggers the clipboard copy process, which
+           will automatically pull from the system clipboard."""
+        self.input_text.delete('1.0', tk.END) # Clear first to ensure it pulls from clipboard
+        self.copy_to_clipboard()
 
 # ####################################################################
 #   MAIN EXECUTION BLOCK

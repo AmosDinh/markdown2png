@@ -1,9 +1,7 @@
 #!/bin/bash
 
-# This script builds the application using a two-step process:
-# 1. Run PyInstaller to build the core app, INTENTIONALLY without the
-#    browser files to avoid the `codesign` error.
-# 2. Manually copy the browser files into the finished .app bundle.
+# This script builds the application by copying all browsers and then
+# explicitly removing the unneeded ones to reduce app size.
 
 # Stop the script if any command fails
 set -e
@@ -20,7 +18,6 @@ rm -rf build "$FINAL_APP_PATH" *.spec
 
 echo ""
 echo "--- Step 2: Building the core application with PyInstaller ---"
-# We build WITHOUT the browser data to prevent the codesign error.
 pyinstaller \
     --name "$APP_NAME" \
     --windowed \
@@ -33,26 +30,26 @@ pyinstaller \
 echo "✅ Core application built successfully."
 
 echo ""
-echo "--- Step 3: Manually copying Playwright browser files ---"
+echo "--- Step 3: Copying all browsers and cleaning up ---"
 
-# Verify that the source browser cache exists
 if [ ! -d "$SOURCE_BROWSERS_PATH" ]; then
     echo "❌ FATAL: Playwright browser cache not found at '$SOURCE_BROWSERS_PATH'"
-    echo "Please run 'playwright install chromium' to download them."
+    echo "Please run 'playwright install' to download them."
     exit 1
 fi
 
-# Define the destination within the .app bundle's MacOS directory
-# This MUST match the path constructed in converter.py (sys._MEIPASS)
-DEST_BROWSER_PATH="$FINAL_APP_PATH/Contents/MacOS/ms-playwright"
-
+DEST_BROWSER_PATH="$FINAL_APP_PATH/Contents/Frameworks/ms-playwright"
 echo "Creating destination directory: $DEST_BROWSER_PATH"
 mkdir -p "$DEST_BROWSER_PATH"
 
-# Copy only the Chromium browser directory into the app
-cp -R "$SOURCE_BROWSERS_PATH"/chromium-* "$DEST_BROWSER_PATH"
+echo "Copying all browser cache files (this may be slow)..."
+cp -R "$SOURCE_BROWSERS_PATH"/. "$DEST_BROWSER_PATH"
 
-echo "✅ Browser files copied successfully."
+echo "Cleaning up unneeded browser files..."
+rm -rf "$DEST_BROWSER_PATH"/webkit-*
+rm -rf "$DEST_BROWSER_PATH"/firefox-*
+rm -rf "$DEST_BROWSER_PATH"/ffmpeg-*
+echo "✅ Cleanup complete."
 echo ""
 echo "--- Build Complete! ---"
 echo "Your standalone application is ready at: $FINAL_APP_PATH"

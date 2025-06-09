@@ -1,0 +1,7 @@
+# Core application dependencies
+markdown
+Pillow
+playwright
+
+# Build-time dependency
+pyinstaller
