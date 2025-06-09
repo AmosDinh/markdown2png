@@ -1,4 +1,4 @@
-# <img src="icon.icns" alt="App Icon" width="48" style="vertical-align: middle; margin-right: 10px;"> markdown2png (macOS)
+# <img src="icon.png" alt="App Icon" width="48" style="vertical-align: middle; margin-right: 10px;"> markdown2png (macOS)
 
 A macOS utility to convert Markdown with LaTeX math into a high-resolution PNG and copy it directly to the clipboard. Perfect for quickly sharing beautifully typeset notes and equations from AI chats, text editors, or research notes.
 
