@@ -2,6 +2,8 @@
 
 A macOS utility to convert Markdown with LaTeX math into a high-resolution PNG and copy it directly to the clipboard. Perfect for quickly sharing beautifully typeset notes and equations from AI chats, text editors, or research notes.
 
+** Under development. Feel free to share any issues or help to develop!**
+
 ![UI Screenshot](ui.png)
 
 ![Example](examples.png)
