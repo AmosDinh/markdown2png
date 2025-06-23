@@ -9,7 +9,7 @@ A macOS utility to convert Markdown with LaTeX math into a high-resolution PNG a
 ![Example](examples.png)
 
 ### Key Features
-(Currently the "save as png" button does not work, but the clipboard functionality is fully operational.)
+
 
 *   **Streamlined Clipboard Workflow:** A dedicated **"Clipboard → Clipboard"** button reads Markdown from your clipboard, converts it to png, and places the resulting image back on the clipboard in one step.
 *   **High-DPI Output:** Configure the resolution scale to generate crisp images perfect for Retina displays and presentations.
